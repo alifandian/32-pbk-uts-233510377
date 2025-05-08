@@ -1,5 +1,8 @@
 <script setup>
-// No props or setup needed for now
+const props = defineProps({
+  currentPage: String
+})
+const emit = defineEmits(['changePage'])
 </script>
 
 <template>
@@ -9,11 +12,19 @@
         <h1>PRODO</h1>
       </div>
       <div class="nav-items">
-        <div class="nav-item active">
+        <div 
+          class="nav-item" 
+          :class="{ active: currentPage === 'all' }"
+          @click="$emit('changePage', 'all')"
+        >
           <span class="nav-icon">📝</span>
           <span class="nav-text">All Tasks</span>
         </div>
-        <div class="nav-item">
+        <div 
+          class="nav-item" 
+          :class="{ active: currentPage === 'completed' }"
+          @click="$emit('changePage', 'completed')"
+        >
           <span class="nav-icon">✓</span>
           <span class="nav-text">Completed</span>
         </div>
