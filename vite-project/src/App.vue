@@ -37,6 +37,7 @@ const deleteTask = (taskId) => {
 }
 
 const completedTasks = computed(() => todos.value.filter(t => t.done));
+const pendingTasks = computed(() => todos.value.filter(t => !t.done));
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
@@ -53,7 +54,7 @@ const formatDate = (dateStr) => {
         <h1 class="page-title">All Tasks</h1>
         <div class="input-container">
           <div class="input-preview">
-            <span v-if="tugas">{{ tugas }}</span>
+            
             
           </div>
           <input 
@@ -86,6 +87,51 @@ const formatDate = (dateStr) => {
           </div>
         </div>
       </div>
+      <div v-else-if="currentPage === 'pending'" class="completed-container">
+        <h1 class="page-title">Pending Tasks</h1>
+        <div class="notion-table-wrapper">
+          <table class="notion-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Task Name</th>
+                <th>Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="pendingTasks.length === 0">
+                <td colspan="4">
+                  <div class="empty-state">
+                    <div class="empty-state-icon">📝</div>
+                    <p>No pending tasks</p>
+                  </div>
+                </td>
+              </tr>
+              <tr v-for="item in pendingTasks" :key="item.id">
+                <td>
+                  <input 
+                    type="checkbox" 
+                    :checked="item.done"
+                    @change="toggleTask(item)"
+                    class="task-checkbox"
+                  >
+                </td>
+                <td>
+                  <span class="notion-pill">{{ item.namatugas }}</span>
+                </td>
+                <td>{{ formatDate(item.date) }}</td>
+                <td>
+                  <span class="notion-status undone">
+                    <span class="notion-dot red"></span>
+                    Undone
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
       <div v-else-if="currentPage === 'completed'" class="completed-container">
         <h1 class="page-title">Completed Tasks</h1>
         <div class="notion-table-wrapper">
@@ -98,6 +144,14 @@ const formatDate = (dateStr) => {
               </tr>
             </thead>
             <tbody>
+              <tr v-if="completedTasks.length === 0">
+                <td colspan="3">
+                  <div class="empty-state">
+                    <div class="empty-state-icon">✓</div>
+                    <p>No completed tasks</p>
+                  </div>
+                </td>
+              </tr>
               <tr v-for="item in completedTasks" :key="item.id">
                 <td>
                   <span class="notion-pill">{{ item.namatugas }}</span>
@@ -140,18 +194,25 @@ body {
   flex: 1;
   margin-left: 240px;
   padding: 40px;
+  background: #f7f6f3;
+  min-height: 100vh;
 }
 
-.todo-container {
-  max-width: 800px;
+.todo-container, .completed-container {
+  max-width: 900px;
   margin: 0 auto;
+  background: #191919;
+  border-radius: 6px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .page-title {
   font-size: 40px;
   font-weight: 700;
   margin-bottom: 30px;
-  color: #37352f;
+  color: #fff;
+  letter-spacing: -0.5px;
 }
 
 .input-container {
@@ -162,16 +223,26 @@ body {
   align-items: flex-start;
   width: 100%;
   max-width: 400px;
+  background: #2f2f2f;
+  padding: 16px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.input-container:focus-within {
+  background: #363636;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .input-preview {
   min-height: 24px;
   font-size: 16px;
-  color: #37352f;
+  color: #fff;
   margin-bottom: 0;
   padding-left: 2px;
   width: 100%;
   word-break: break-word;
+  opacity: 0.8;
 }
 
 .input-preview .placeholder {
@@ -181,17 +252,45 @@ body {
 .task-input {
   width: 100%;
   box-sizing: border-box;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  padding: 8px 0;
+  outline: none;
+}
+
+.task-input::placeholder {
+  color: #bdbdbd;
+  opacity: 0.7;
 }
 
 .add-button {
-  align-self: flex-end;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #37352f;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
   margin-top: 8px;
+}
+
+.add-button:hover {
+  background: #2a2925;
+  transform: translateY(-1px);
 }
 
 .tasks-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-top: 24px;
 }
 
 .task-item {
@@ -199,13 +298,13 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background-color: #f7f6f3;
+  background: #2f2f2f;
   border-radius: 4px;
   transition: all 0.2s ease;
 }
 
 .task-item:hover {
-  background-color: #f1f1ef;
+  background: #363636;
 }
 
 .task-content {
@@ -216,15 +315,37 @@ body {
 }
 
 .task-checkbox {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   cursor: pointer;
   accent-color: #37352f;
+  margin: 0;
+  border-radius: 3px;
+  border: 1px solid #37352f;
+  transition: all 0.2s ease;
+}
+
+.task-checkbox:checked {
+  background-color: #37352f;
+  border-color: #37352f;
+  animation: checkmark 0.2s ease-in-out;
+}
+
+@keyframes checkmark {
+  0% {
+    transform: scale(0.8);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .task-text {
   font-size: 16px;
-  color: #37352f;
+  color: #fff;
 }
 
 .task-text.completed {
@@ -251,63 +372,88 @@ body {
 }
 
 .delete-button:hover {
-  color: #37352f;
-  background-color: #e6e6e6;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.completed-container {
-  max-width: 900px;
-  margin: 0 auto;
-}
 .notion-table-wrapper {
   background: #191919;
   border-radius: 6px;
   padding: 24px 16px 16px 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
+
 .notion-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  background: #191919;
+  background: transparent;
   color: #fff;
   font-size: 15px;
   border-radius: 6px;
   overflow: hidden;
+  border: 1px solid #232323;
 }
-.notion-table th, .notion-table td {
-  border-bottom: 1.5px solid #232323;
-  padding: 10px 16px;
-  text-align: left;
-}
+
 .notion-table th {
-  background: #191919;
+  background: #232323;
   font-weight: 600;
   color: #bdbdbd;
   border-bottom: 2px solid #232323;
+  padding: 14px 16px;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
 }
-.notion-table tr:last-child td {
-  border-bottom: none;
+
+.notion-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #232323;
 }
+
+.notion-table tr:hover {
+  background-color: #232323;
+}
+
 .notion-pill {
   background: #2f2f2f;
   color: #ffb86c;
   border-radius: 4px;
-  padding: 2px 10px;
+  padding: 4px 12px;
+  font-size: 13px;
+  letter-spacing: 0.3px;
   font-weight: 500;
-  font-size: 14px;
   display: inline-block;
 }
+
+.notion-pill:hover {
+  background: #363636;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
 .notion-status {
   display: inline-flex;
   align-items: center;
   background: #1a3d2a;
   color: #6ee7b7;
   border-radius: 4px;
-  padding: 2px 12px 2px 8px;
+  padding: 4px 12px 4px 8px;
   font-weight: 600;
   font-size: 14px;
 }
+
+.notion-status:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.notion-status.undone {
+  background: #3d1a1a;
+  color: #ff6b6b;
+}
+
 .notion-dot {
   width: 9px;
   height: 9px;
@@ -317,7 +463,36 @@ body {
   margin-right: 7px;
 }
 
-.completed-container .page-title {
-  color: #fff;
+.notion-dot.red {
+  background: #ff4d4d;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #bdbdbd;
+  font-size: 16px;
+  background: #232323;
+  border-radius: 4px;
+  margin: 8px;
+}
+
+.empty-state-icon {
+  font-size: 32px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
 }
 </style>

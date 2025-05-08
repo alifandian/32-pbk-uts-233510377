@@ -22,15 +22,19 @@ const emit = defineEmits(['changePage'])
         </div>
         <div 
           class="nav-item" 
+          :class="{ active: currentPage === 'pending' }"
+          @click="$emit('changePage', 'pending')"
+        >
+          <span class="nav-icon">⏳</span>
+          <span class="nav-text">Pending</span>
+        </div>
+        <div 
+          class="nav-item" 
           :class="{ active: currentPage === 'completed' }"
           @click="$emit('changePage', 'completed')"
         >
           <span class="nav-icon">✓</span>
           <span class="nav-text">Completed</span>
-        </div>
-        <div class="nav-item">
-          <span class="nav-icon">⏳</span>
-          <span class="nav-text">Pending</span>
         </div>
       </div>
     </div>
